@@ -21,12 +21,7 @@ public interface IAccountStore
     void SetCurrentUser(string userName);
 
     // Try to start a new investment
-    bool TryStartInvestment(
-    string optionId,
-    out ActiveInvestment? investment,
-    out string? errorCode,
-    out string? errorMessage
-);
+    InvestResult<ActiveInvestment> TryStartInvestment(string optionId);
 
     // Complete an investment
     void CompleteInvestment(string activeInvestmentId);

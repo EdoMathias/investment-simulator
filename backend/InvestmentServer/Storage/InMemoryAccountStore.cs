@@ -82,27 +82,17 @@ public class InMemoryAccountStore : IAccountStore
     /// <summary>
     /// Try to start a new investment
     /// </summary>
-    /// <param name="optionId">The ID of the investment option to start</param>
-    /// <param name="investment">The investment that was started</param>
-    /// <param name="errorCode">The error code if the investment could not be started</param>
-    /// <param name="errorMessage">The error message if the investment could not be started</param>
-    /// <returns>True if the investment was started successfully, false otherwise</returns>
-    public bool TryStartInvestment(string optionId, out ActiveInvestment? investment, out string? errorCode, out string? errorMessage)
+    /// <param name="optionId"></param>
+    /// <returns>Result of the investment attempt</returns>
+    public InvestResult<ActiveInvestment> TryStartInvestment(string optionId)
     {
         lock (_lock)
         {
-            investment = null;
-            errorCode = null;
-            errorMessage = null;
-
-
             // Check if the user is logged in
             // TODO: Move this to a helper method
             if (_currentUserName is null)
             {
-                errorCode = "NOT_LOGGED_IN";
-                errorMessage = "User is not logged in";
-                return false;
+                return InvestResult<ActiveInvestment>.Failure("NOT_LOGGED_IN", "User is not logged in");
             }
 
             // Check if the option exists
@@ -110,34 +100,28 @@ public class InMemoryAccountStore : IAccountStore
             var option = _investmentOptions.FirstOrDefault(o => o.Id == optionId);
             if (option is null)
             {
-                errorCode = "INVALID_OPTION";
-                errorMessage = "Invalid investment option";
-                return false;
+                return InvestResult<ActiveInvestment>.Failure("INVALID_OPTION", "Invalid investment option");
             }
 
             // Check if the user has enough balance
             // TODO: Move this to a helper method
             if (_balance < option.RequiredAmount)
             {
-                errorCode = "INSUFFICIENT_BALANCE";
-                errorMessage = "Not enough balance for this investment";
-                return false;
+                return InvestResult<ActiveInvestment>.Failure("INSUFFICIENT_BALANCE", "Not enough balance for this investment");
             }
 
             // Check if the investment is already active
             // TODO: Move this to a helper method
             if (_activeInvestments.Any(i => i.OptionId == optionId))
             {
-                errorCode = "INVESTMENT_ALREADY_ACTIVE";
-                errorMessage = "Investment is already active";
-                return false;
+                return InvestResult<ActiveInvestment>.Failure("INVESTMENT_ALREADY_ACTIVE", "Investment is already active");
             }
 
             // Reduce balance
             _balance -= option.RequiredAmount;
 
             // Create a new investment
-            investment = new ActiveInvestment(
+            var investment = new ActiveInvestment(
                 Guid.NewGuid().ToString(),
                 optionId,
                 option.Name,
@@ -148,7 +132,7 @@ public class InMemoryAccountStore : IAccountStore
 
             // Add the investment to the active investments
             _activeInvestments.Add(investment);
-            return true;
+            return InvestResult<ActiveInvestment>.Success(investment);
         }
     }
 
@@ -158,6 +142,7 @@ public class InMemoryAccountStore : IAccountStore
     /// <param name="activeInvestmentId">The ID of the active investment to complete</param>
     public void CompleteInvestment(string activeInvestmentId)
     {
+        // TODO: Why lock all?
         lock (_lock)
         {
             var index = _activeInvestments.FindIndex(i => i.Id == activeInvestmentId);
@@ -177,7 +162,7 @@ public class InMemoryAccountStore : IAccountStore
 
             // TODO: Add the investment to the history
             _investmentHistory.Add(new InvestmentHistoryItem(
-            Id: investment.Id,
+                Id: investment.Id,
                 OptionId: investment.OptionId,
                 Name: investment.Name,
                 InvestedAmount: investment.InvestedAmount,

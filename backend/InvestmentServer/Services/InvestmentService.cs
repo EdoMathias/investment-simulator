@@ -15,22 +15,18 @@ public sealed class InvestmentService
 
     public InvestResult TryInvest(string optionId)
     {
-        var investmentResult = _store.TryStartInvestment(
-            optionId,
-            out ActiveInvestment? investment,
-            out string? errorCode,
-            out string? errorMessage
-        );
+        var investmentResult = _store.TryStartInvestment(optionId);
 
-        // If the investment was started successfully, return the investment
-        if (investmentResult is true && investment is not null)
-            return new InvestResult.Ok(investment);
+        // If investment was not successful, return the error
+        if (investmentResult.IsSuccess is false)
+        {
+            return new InvestResult.Fail(
+                investmentResult.Error!.Code,
+                investmentResult.Error.Message
+            );
+        }
 
-        // If the investment was not started successfully, return the error
-        return new InvestResult.Fail(
-            errorCode ?? "INVEST_FAILED",
-            errorMessage ?? "Failed to start investment."
-        );
+        return new InvestResult.Ok(investmentResult.Data!);
     }
 }
 
