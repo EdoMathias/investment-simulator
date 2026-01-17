@@ -1,4 +1,6 @@
 using InvestmentServer.Storage;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace InvestmentServer.Workers;
 
@@ -8,22 +10,33 @@ namespace InvestmentServer.Workers;
 public sealed class InvestmentProcessor : BackgroundService
 {
     private readonly IAccountStore _accountStore;
+    private readonly ILogger<InvestmentProcessor> _logger;
 
-    // Constructor
-    public InvestmentProcessor(IAccountStore accountStore)
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="accountStore"></param>
+    /// <param name="logger"></param>
+    public InvestmentProcessor(IAccountStore accountStore, ILogger<InvestmentProcessor> logger)
     {
         _accountStore = accountStore;
+        _logger = logger;
     }
 
-    // Start the background service
+    /// <summary>
+    /// Start the background service.
+    /// Tracks active investments and completes them when they are due.
+    /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _logger.LogInformation("Investment Processor started");
+
         // Track all active investments and complete them when they are due
         while (!stoppingToken.IsCancellationRequested)
         {
-            // Get a copy of the active investments and convert to list so we can modify it
+            // Get a copy of the active investments so we don't modify the source while iterating
             var activeInvestments = _accountStore.GetAccountState().ActiveInvestments.ToList();
-            
+
             var now = DateTime.UtcNow;
 
             // Complete each active investment that is due
@@ -32,9 +45,9 @@ public sealed class InvestmentProcessor : BackgroundService
                 if (investment.EndTimeUtc <= now)
                 {
                     // Complete the investment
-                    Console.WriteLine($"Investment {investment.Id} ({investment.Name}) is due. Completing it...");
+                    _logger.LogInformation($"Investment {investment.Id} ({investment.Name}) is due. Completing it...");
                     _accountStore.CompleteInvestment(investment.Id);
-                    Console.WriteLine($"Investment {investment.Id} ({investment.Name}) completed successfully");
+                    _logger.LogInformation($"Investment {investment.Id} ({investment.Name}) completed successfully");
                 }
             }
 
