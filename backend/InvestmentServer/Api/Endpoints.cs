@@ -23,7 +23,7 @@ public static class Endpoints
             }
 
             accountStore.SetCurrentUser(request.UserName);
-            return ApiResults.OkData(new { message = "Logged in successfully. Hello, " + request.UserName + "!" });
+            return ApiResults.Ok(new { message = "Logged in successfully. Hello, " + request.UserName + "!" });
         });
 
         // GET: Account State
@@ -37,19 +37,19 @@ public static class Endpoints
                 return ApiErrors.BadRequest("NOT_LOGGED_IN", "User is not logged in");
             }
 
-            return ApiResults.OkData(state);
+            return ApiResults.Ok(state);
         });
 
         // GET: Investment Options
         app.MapGet("/api/investment-options", (IAccountStore accountStore) =>
         {
-            return ApiResults.OkData(accountStore.GetInvestmentOptions());
+            return ApiResults.Ok(accountStore.GetInvestmentOptions());
         });
 
         // GET: Account's investment history
         app.MapGet("/api/investment-history", (IAccountStore accountStore) =>
         {
-            return ApiResults.OkData(accountStore.GetInvestmentHistory());
+            return ApiResults.Ok(accountStore.GetInvestmentHistory());
         });
 
         // POST: Start an investment
@@ -59,7 +59,7 @@ public static class Endpoints
             return result switch
             {
                 InvestResult.Ok ok =>
-                    ApiResults.OkData(new { message = "Investment started successfully. Your investment will be completed in " + Math.Round(ok.Investment.EndTimeUtc.Subtract(DateTime.UtcNow).TotalSeconds) + " seconds." }),
+                    ApiResults.Ok(new { message = "Investment started successfully. Your investment will be completed in " + Math.Round(ok.Investment.EndTimeUtc.Subtract(DateTime.UtcNow).TotalSeconds) + " seconds." }),
 
                 InvestResult.Fail fail =>
                     ApiErrors.BadRequest(fail.Code, fail.Message),
