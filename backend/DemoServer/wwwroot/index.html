@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Button → ASP.NET Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 16px;
+        }
+
+        input {
+            margin: 4px 0;
+            padding: 6px;
+            width: 320px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-top: 8px;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Simple HTML → ASP.NET Core</h2>
+
+    <div>
+        <div>
+            <label>Your name</label><br />
+            <input id="name" value="Edo" />
+        </div>
+
+        <div>
+            <label>Message</label><br />
+            <input id="text" value="Ping from the browser!" />
+        </div>
+
+        <button id="sendBtn">Send to server</button>
+    </div>
+
+    <h3>Response</h3>
+    <pre id="output">(nothing yet)</pre>
+
+    <script>
+        const output = document.getElementById("output");
+        const btn = document.getElementById("sendBtn");
+
+        async function send() {
+            output.textContent = "Sending...";
+
+            const name = document.getElementById("name").value;
+            const text = document.getElementById("text").value;
+
+            try {
+                const res = await fetch("/api/ping", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, text }),
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`Server error ${res.status}: ${errText}`);
+                }
+
+                const data = await res.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.textContent = "Failed: " + err.message;
+            }
+        }
+
+        btn.addEventListener("click", send);
+    </script>
+</body>
+
+</html>

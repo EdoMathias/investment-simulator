@@ -1,0 +1,46 @@
+# ======================
+# General
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# .NET / ASP.NET Core
+# ======================
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.pdb
+*.mdb
+.vs/
+.vscode/
+
+# SQLite / local DB (if added later)
+*.db
+*.db-shm
+*.db-wal
+
+# ======================
+# Node / React
+# ======================
+node_modules/
+dist/
+build/
+.vite/
+
+# ======================
+# Env / secrets
+# ======================
+.env
+.env.local
+.env.*.local
+
+# ======================
+# Logs
+# ======================
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
