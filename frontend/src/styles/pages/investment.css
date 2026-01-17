@@ -1,0 +1,32 @@
+/* Investment page styles */
+
+.pageConsole {
+    display: block;
+}
+
+.consoleTopRight {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.consoleSectionTitle {
+    margin: 0 0 10px;
+    font-weight: 800;
+}
+
+.kpiRow {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+}
+
+.kpiSub {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.tableWrap {
+    overflow: hidden;
+}

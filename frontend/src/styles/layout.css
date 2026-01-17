@@ -1,0 +1,45 @@
+/* Layout styles for the application */
+
+.container {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 22px 16px 40px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.gridTop {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.gridTwo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+@media (max-width: 920px) {
+    .gridTwo {
+        grid-template-columns: 1fr;
+    }
+}
