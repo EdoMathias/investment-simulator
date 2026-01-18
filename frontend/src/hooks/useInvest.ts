@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { get, post } from "../api/http";
 import { ENDPOINTS } from "../api/endpoints";
-import type { AccountState, InvestmentHistoryItem } from "../api/types";
+import type { AccountState, ApiError, InvestmentHistoryItem } from "../api/types";
 
 /**
  * Hook to invest in an option
  */
 export function useInvest() {
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<ApiError | null>(null);
 
     const invest = async (
         optionId: string,
@@ -31,8 +31,11 @@ export function useInvest() {
 
             return { state, history };
         } catch (e: any) {
-            const errorMessage = e.message ?? "Invest failed";
-            setError(errorMessage);
+            const apiError: ApiError = e.apiError || {
+                code: "INVEST_FAILED",
+                message: e.message ?? "Invest failed"
+            };
+            setError(apiError);
             throw e;
         } finally {
             setLoading(false);

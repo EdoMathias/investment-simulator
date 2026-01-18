@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { post } from "../api/http";
 import { ENDPOINTS } from "../api/endpoints";
-import type { LoginRequest } from "../api/types";
+import type { ApiError, LoginRequest } from "../api/types";
 
 /**
  * Hook to manage authentication state
@@ -11,7 +11,7 @@ export function useAuth() {
     const [name, setName] = useState("");
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<ApiError | null>(null);
 
     const login = async () => {
         setError(null);
@@ -21,7 +21,11 @@ export function useAuth() {
             await post<{ message: string }, LoginRequest>(ENDPOINTS.login, body);
             setIsAuthenticated(true);
         } catch (e: any) {
-            setError(e.message ?? "Login failed");
+            const apiError: ApiError = e.apiError || {
+                code: "LOGIN_FAILED",
+                message: e.message ?? "Login failed"
+            };
+            setError(apiError);
             throw e;
         } finally {
             setLoading(false);
@@ -37,7 +41,11 @@ export function useAuth() {
             setName("");
             setError(null);
         } catch (e: any) {
-            setError(e.message ?? "Logout failed");
+            const apiError: ApiError = e.apiError || {
+                code: "LOGOUT_FAILED",
+                message: e.message ?? "Logout failed"
+            };
+            setError(apiError);
             throw e;
         } finally {
             setLoading(false);

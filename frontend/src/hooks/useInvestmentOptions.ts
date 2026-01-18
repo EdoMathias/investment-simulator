@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { get } from "../api/http";
 import { ENDPOINTS } from "../api/endpoints";
-import type { InvestmentOption } from "../api/types";
+import type { ApiError, InvestmentOption } from "../api/types";
 
 /**
  * Hook to get investment options
@@ -10,7 +10,7 @@ import type { InvestmentOption } from "../api/types";
  */
 export function useInvestmentOptions(enabled: boolean) {
     const [options, setOptions] = useState<InvestmentOption[]>([]);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<ApiError | null>(null);
 
     useEffect(() => {
         if (!enabled) return;
@@ -26,7 +26,11 @@ export function useInvestmentOptions(enabled: boolean) {
                 }
             } catch (e: any) {
                 if (!cancelled) {
-                    setError(e.message ?? "Failed to fetch options");
+                    const apiError: ApiError = e.apiError || {
+                        code: "FETCH_OPTIONS_FAILED",
+                        message: e.message ?? "Failed to fetch options"
+                    };
+                    setError(apiError);
                 }
             }
         })();

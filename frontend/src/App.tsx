@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import type { AccountState, InvestmentHistoryItem } from "./api/types";
+import type { AccountState, ApiError, InvestmentHistoryItem } from "./api/types";
 import { ENDPOINTS } from "./api/endpoints";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { Login } from "./pages/login/Login";
@@ -24,9 +24,9 @@ export default function App() {
 
   // State management
   const [state, setState] = useState<AccountState | null>(null);
-  const [stateError, setStateError] = useState<string | null>(null);
+  const [stateError, setStateError] = useState<ApiError | null>(null);
   const [history, setHistory] = useState<InvestmentHistoryItem[]>([]);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState<ApiError | null>(null);
 
   // Fetch state function
   const fetchState = useCallback(async () => {
@@ -35,7 +35,11 @@ export default function App() {
       setState(newState);
       setStateError(null);
     } catch (e: any) {
-      setStateError(e.message ?? "Failed to fetch account state");
+      const apiError: ApiError = e.apiError || {
+        code: "FETCH_STATE_FAILED",
+        message: e.message ?? "Failed to fetch account state"
+      };
+      setStateError(apiError);
     }
   }, []);
 
@@ -46,7 +50,11 @@ export default function App() {
       setHistory(newHistory);
       setHistoryError(null);
     } catch (e: any) {
-      setHistoryError(e.message ?? "Failed to fetch investment history");
+      const apiError: ApiError = e.apiError || {
+        code: "FETCH_HISTORY_FAILED",
+        message: e.message ?? "Failed to fetch investment history"
+      };
+      setHistoryError(apiError);
     }
   }, []);
 

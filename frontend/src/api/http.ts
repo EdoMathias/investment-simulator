@@ -36,13 +36,26 @@ export async function post<TRes, TBody>(url: string, body: TBody): Promise<TRes>
 async function handleResponse<T>(response: Response): Promise<T> {
     const text = await response.text();
 
-    // If we get ApiError, throw an error with the code and message
+    // If we get ApiError, throw an error with the ApiError attached
     if (response.ok === false) {
         try {
             const error = JSON.parse(text) as ApiError;
-            throw new Error(`${error.code}: ${error.message}`);
-        } catch {
-            throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+            const err = new Error(error.message);
+            (err as any).apiError = error;
+            throw err;
+        } catch (e: any) {
+            // If it's already our error with apiError, rethrow it
+            if (e.apiError) {
+                throw e;
+            }
+            // Otherwise create a generic ApiError
+            const genericError: ApiError = {
+                code: `HTTP_${response.status}`,
+                message: text || response.statusText || "An error occurred"
+            };
+            const err = new Error(genericError.message);
+            (err as any).apiError = genericError;
+            throw err;
         }
     }
 
