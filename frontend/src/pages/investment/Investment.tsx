@@ -76,8 +76,7 @@ export function Investment(props: {
                     const endsInSec = Math.max(
                       0,
                       Math.ceil(
-                        (new Date(inv.endTimeUtc).getTime() - now) /
-                          1000,
+                        (new Date(inv.endTimeUtc).getTime() - now) / 1000,
                       ),
                     );
 
@@ -173,7 +172,7 @@ export function Investment(props: {
                     <TableCell mono>{h.id.slice(0, 8)}…</TableCell>
                     <TableCell>{h.name}</TableCell>
                     <TableCell>${h.investedAmount}</TableCell>
-                    <TableCell>${h.expectedReturn}</TableCell>
+                    <TableCell>${h.returnedAmount}</TableCell>
                     <TableCell>
                       {new Date(h.completedAtUtc).toLocaleString()}
                     </TableCell>

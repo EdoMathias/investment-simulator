@@ -32,7 +32,7 @@ export type InvestmentHistoryItem = {
     optionId: string;
     name: string;
     investedAmount: number;
-    expectedReturn: number;
+    returnedAmount: number;
     startTimeUtc: string;
     endTimeUtc: string;
     completedAtUtc: string;

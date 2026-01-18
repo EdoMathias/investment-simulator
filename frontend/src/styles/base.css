@@ -175,6 +175,43 @@ a {
     animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* Success Toast */
+.successToast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+    min-width: 300px;
+    animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.successToastContent {
+    background: linear-gradient(135deg, rgba(81, 207, 102, 0.15), rgba(81, 207, 102, 0.1));
+    border: 1px solid rgba(81, 207, 102, 0.3);
+    color: var(--success);
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
+}
+
+.successToastMessage {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.successToast .successIcon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    opacity: 0.9;
+}
+
 /* Buttons */
 .btn {
     background: var(--panel2);
