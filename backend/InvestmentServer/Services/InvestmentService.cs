@@ -1,23 +1,24 @@
 using InvestmentServer.Domain;
 using InvestmentServer.Storage;
+using InvestmentServer.Workers;
 
 namespace InvestmentServer.Services;
 
 public sealed class InvestmentService
 {
     private readonly IAccountStore _store;
+    private readonly InvestmentCompletionScheduler _scheduler;
 
-    // Constructor
-    public InvestmentService(IAccountStore store)
+    public InvestmentService(IAccountStore store, InvestmentCompletionScheduler scheduler)
     {
         _store = store;
+        _scheduler = scheduler;
     }
 
-    public InvestResult TryInvest(string optionId)
+    public async Task<InvestResult> TryInvest(string optionId)
     {
-        var investmentResult = _store.TryStartInvestment(optionId);
+        var investmentResult = await _store.TryStartInvestment(optionId);
 
-        // If investment was not successful, return the error
         if (investmentResult.IsSuccess is false)
         {
             return new InvestResult.Fail(
@@ -26,7 +27,10 @@ public sealed class InvestmentService
             );
         }
 
-        return new InvestResult.Ok(investmentResult.Data!);
+        var investment = investmentResult.Data!;
+        _scheduler.Schedule(investment);
+
+        return new InvestResult.Ok(investment);
     }
 }
 

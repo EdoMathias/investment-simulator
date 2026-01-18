@@ -4,7 +4,6 @@ using InvestmentServer.Services;
 using InvestmentServer.Workers;
 using InvestmentServer.Api;
 
-// Create a new web application builder
 var builder = WebApplication.CreateBuilder(args);
 
 // Add CORS services to the builder
@@ -18,13 +17,23 @@ builder.Services.AddCors((options) =>
     });
 });
 
-// Add the account store to the builder
-builder.Services.AddSingleton<IAccountStore, InMemoryAccountStore>();
+builder.Services.AddSingleton<InvestmentServer.Events.CompletionEventsHub>();
+
+builder.Services.AddSingleton<IAccountStore>(sp =>
+{
+    var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "accounts.json");
+
+    return new JsonFileAccountStore(
+        dataPath,
+        sp.GetRequiredService<ILogger<JsonFileAccountStore>>(),
+        sp.GetRequiredService<InvestmentServer.Events.CompletionEventsHub>()
+    );
+});
+
+builder.Services.AddSingleton<InvestmentCompletionScheduler>();
+builder.Services.AddHostedService<InvestmentRescheduler>();
+
 builder.Services.AddSingleton<InvestmentService>();
-
-// // Add the investment processor to track the active investments and complete them when they are due
-builder.Services.AddHostedService<InvestmentProcessor>();
-
 
 // Build the web application
 var app = builder.Build();

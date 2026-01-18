@@ -24,8 +24,11 @@ public interface IAccountStore
     void ClearCurrentUser();
 
     // Try to start a new investment
-    InvestResult<ActiveInvestment> TryStartInvestment(string optionId);
+    Task<InvestResult<ActiveInvestment>> TryStartInvestment(string optionId);
 
     // Complete an investment
-    void CompleteInvestment(string activeInvestmentId);
+    Task CompleteInvestment(string activeInvestmentId, CancellationToken ct = default);
+
+    // Get all active investments
+    Task<IReadOnlyList<ActiveInvestment>> GetAllActiveInvestmentsAsync(CancellationToken ct = default);
 }

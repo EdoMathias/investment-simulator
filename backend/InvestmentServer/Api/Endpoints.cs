@@ -3,6 +3,8 @@ using InvestmentServer.Storage;
 using InvestmentServer.Services;
 using InvestmentServer.Contracts;
 using InvestmentServer.Utils;
+using InvestmentServer.Events;
+using System.Text.Json;
 
 namespace InvestmentServer.Api;
 
@@ -60,9 +62,9 @@ public static class Endpoints
         });
 
         // POST: Start an investment
-        app.MapPost("/api/invest", (InvestmentService investmentService, InvestRequest request) =>
+        app.MapPost("/api/invest", async (InvestmentService investmentService, InvestRequest request) =>
         {
-            var result = investmentService.TryInvest(request.OptionId);
+            var result = await investmentService.TryInvest(request.OptionId);
             return result switch
             {
                 InvestResult.Ok ok =>
@@ -73,6 +75,51 @@ public static class Endpoints
 
                 _ => Results.StatusCode(500)
             };
+        });
+
+        // SSE: Stream investment completion events
+        app.MapGet("/events/completions/stream", async (HttpContext ctx, CompletionEventsHub hub) =>
+        {
+            ctx.Response.Headers["Content-Type"] = "text/event-stream";
+            ctx.Response.Headers["Cache-Control"] = "no-cache";
+            ctx.Response.Headers["Connection"] = "keep-alive";
+
+            var (reader, unsubscribe) = hub.Subscribe();
+
+            try
+            {
+                // Initial comment so client knows it's connected
+                await ctx.Response.WriteAsync(": connected\n\n");
+                await ctx.Response.Body.FlushAsync();
+
+                var heartbeat = TimeSpan.FromSeconds(1);
+
+                while (!ctx.RequestAborted.IsCancellationRequested)
+                {
+                    var readTask = reader.ReadAsync(ctx.RequestAborted).AsTask();
+                    var pingTask = Task.Delay(heartbeat, ctx.RequestAborted);
+
+                    var completed = await Task.WhenAny(readTask, pingTask);
+
+                    if (completed == pingTask)
+                    {
+                        await ctx.Response.WriteAsync(": ping\n\n");
+                        await ctx.Response.Body.FlushAsync();
+                        continue;
+                    }
+
+                    var ev = await readTask;
+
+                    await ctx.Response.WriteAsync($"id: {ev.Token}\n");
+                    await ctx.Response.WriteAsync("event: investmentCompleted\n");
+                    await ctx.Response.WriteAsync($"data: {JsonSerializer.Serialize(ev)}\n\n");
+                    await ctx.Response.Body.FlushAsync();
+                }
+            }
+            finally
+            {
+                unsubscribe();
+            }
         });
 
         return app;
