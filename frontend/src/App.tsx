@@ -106,6 +106,8 @@ export default function App() {
           ...prev,
         ];
       });
+
+      setSuccessMessage(`${evt.Name} completed successfully! Returned ${evt.ReturnedAmount}$ with a balance of ${evt.BalanceAfter}$`);
     },
     isAuthenticated
   );
@@ -119,17 +121,13 @@ export default function App() {
   // Handle invest - refresh state after successful investment
   const handleInvest = useCallback(async (optionId: string) => {
     try {
-      // Find the investment option name before investing
-      const investmentOption = options?.find(opt => opt.id === optionId);
-      const investmentName = investmentOption?.name || "Investment";
-
-      await invest(optionId, (newState) => {
+      const { response: { message } } = await invest(optionId, (newState) => {
         // Update state immediately after investment
         setAccountState(newState);
       });
 
       // Show success message
-      setSuccessMessage(`Investment "${investmentName}" started successfully!`);
+      setSuccessMessage(`${message}`);
 
       // Also refresh state to ensure we have the latest data
       await fetchState();

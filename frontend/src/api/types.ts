@@ -9,6 +9,10 @@ export type LoginRequest = {
     userName: string;
 };
 
+export type InvestmentResponse = {
+    message: string;
+};
+
 export type InvestmentOption = {
     id: string;
     name: string;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { get, post } from "../api/http";
 import { ENDPOINTS } from "../api/endpoints";
-import type { AccountState, ApiError, InvestmentHistoryItem } from "../api/types";
+import type { AccountState, ApiError, InvestmentHistoryItem, InvestmentResponse } from "../api/types";
 
 /**
  * Hook to invest in an option
@@ -17,7 +17,7 @@ export function useInvest() {
         setError(null);
         setLoading(true);
         try {
-            await post(ENDPOINTS.invest, { optionId });
+            const response = await post<InvestmentResponse, { optionId: string }>(ENDPOINTS.invest, { optionId });
 
             // Refresh state and history to get the new investment
             const [state, history] = await Promise.all([
@@ -29,7 +29,7 @@ export function useInvest() {
                 onSuccess(state, history);
             }
 
-            return { state, history };
+            return { state, history, response };
         } catch (e: any) {
             const apiError: ApiError = e.apiError || {
                 code: "INVEST_FAILED",
