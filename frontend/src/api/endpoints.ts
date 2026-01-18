@@ -6,4 +6,5 @@ export const ENDPOINTS = {
     invest: "/api/invest",
     investmentOptions: "/api/investment-options",
     investmentHistory: "/api/investment-history",
+    investmentCompletedStream: "/events/completions/stream",
 };

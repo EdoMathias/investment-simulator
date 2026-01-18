@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card } from '../../components/Card';
 import { TableHeader } from '../../components/TableHeader';
 import { TableCell } from '../../components/TableCell';
@@ -17,6 +18,26 @@ export function Investment(props: {
   const { state, options, history, loading, onInvest } = props;
   const isLoggedIn = !!state?.userName;
 
+  // Update every second to refresh the timer
+  const [now, setNow] = useState(Date.now());
+
+  // Update immediately when investments change to avoid stale timestamps
+  useEffect(() => {
+    if (state?.activeInvestments?.length) {
+      setNow(Date.now());
+    }
+  }, [state?.activeInvestments]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !state?.activeInvestments?.length) return;
+
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isLoggedIn, state?.activeInvestments?.length]);
+
   return (
     <div className="pageConsole">
       <div className="gridTop">
@@ -30,7 +51,7 @@ export function Investment(props: {
           <div className="kpiRow">
             <div className="kpi">${state ? state.balance.toFixed(2) : '—'}</div>
           </div>
-          <div className="kpiSub">Updates every ~1s</div>
+          <div className="kpiSub">Updates on investment completion</div>
         </Card>
       </div>
 
@@ -55,7 +76,7 @@ export function Investment(props: {
                     const endsInSec = Math.max(
                       0,
                       Math.ceil(
-                        (new Date(inv.endTimeUtc).getTime() - Date.now()) /
+                        (new Date(inv.endTimeUtc).getTime() - now) /
                           1000,
                       ),
                     );
