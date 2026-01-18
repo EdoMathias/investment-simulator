@@ -13,7 +13,7 @@
 
 .consoleSectionTitle {
     margin: 0 0 10px;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .kpiRow {
@@ -28,5 +28,70 @@
 }
 
 .tableWrap {
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: -24px;
+    padding: 24px;
+}
+
+.tableWrap table {
+    min-width: 100%;
+}
+
+/* Responsive table handling */
+@media (max-width: 1024px) {
+    .tableWrap {
+        margin: -20px;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .tableWrap {
+        margin: -16px;
+        padding: 16px;
+    }
+    
+    .table {
+        font-size: 13px;
+    }
+    
+    .tableHeader {
+        padding: 10px 12px;
+        font-size: 10px;
+    }
+    
+    .tableCell {
+        padding: 12px;
+        white-space: nowrap;
+    }
+    
+    .kpi {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tableWrap {
+        margin: -12px;
+        padding: 12px;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+    
+    .tableHeader {
+        padding: 8px 10px;
+        font-size: 9px;
+    }
+    
+    .tableCell {
+        padding: 10px;
+    }
+    
+    .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
 }

@@ -1,134 +1,95 @@
-import { useEffect, useState } from "react";
-import { get, post } from "./api/http";
-import type { AccountState, InvestmentHistoryItem, InvestmentOption, LoginRequest } from "./api/types";
+import { useEffect, useMemo, useState } from "react";
+import type { AccountState, InvestmentHistoryItem } from "./api/types";
 import { ENDPOINTS } from "./api/endpoints";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { Login } from "./pages/login/Login";
 import { Investment } from "./pages/investment/Investment";
+import { Header } from "./components/Header";
+import { usePolling } from "./hooks/usePolling";
+import { useAuth } from "./hooks/useAuth";
+import { useInvestmentOptions } from "./hooks/useInvestmentOptions";
+import { useInvest } from "./hooks/useInvest";
 
 type View = "login" | "investment";
 
 export default function App() {
   const [view, setView] = useState<View>("login");
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
-  const [state, setState] = useState<AccountState | null>(null);
-  const [options, setOptions] = useState<InvestmentOption[]>([]);
-  const [history, setHistory] = useState<InvestmentHistoryItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Authentication state
+  const { name, setName, isAuthenticated, loading: authLoading, error: authError, login, logout } = useAuth();
 
-  // Poll account state every 1s on console view
+  // Investment view state
+  const isInvestmentView = view === "investment";
+
+  // Poll state every 1s on investment view
+  const { data: state, error: stateError } = usePolling<AccountState>(
+    ENDPOINTS.state,
+    isInvestmentView,
+    1000
+  );
+
+  // Poll history every 3s on investment view
+  const { data: history, error: historyError } = usePolling<InvestmentHistoryItem[]>(
+    ENDPOINTS.investmentHistory,
+    isInvestmentView,
+    3000
+  );
+
+  // Get investment options
+  const { options, error: optionsError } = useInvestmentOptions(isInvestmentView);
+
+  // Invest
+  const { invest, loading: investLoading, error: investError } = useInvest();
+
+  // Set default theme to dark
   useEffect(() => {
-    if (view !== "investment") return;
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
 
-    let cancelled = false;
-
-    const tick = async () => {
-      try {
-        const s = await get<AccountState>(ENDPOINTS.state);
-        if (!cancelled) setState(s);
-      } catch (e: any) {
-        if (!cancelled) setError(e.message ?? "Failed to fetch state");
-      }
-    };
-
-    tick();
-    const id = window.setInterval(tick, 1000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [view]);
-
-  // Load options once on entering console
+  // Update view when authentication state changes
   useEffect(() => {
-    if (view !== "investment") return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const opts = await get<InvestmentOption[]>(ENDPOINTS.investmentOptions);
-        if (!cancelled) setOptions(opts);
-      } catch (e: any) {
-        if (!cancelled) setError(e.message ?? "Failed to fetch options");
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [view]);
-
-  // Load and poll history every 1s on investment view
-  useEffect(() => {
-    if (view !== "investment") return;
-
-    let cancelled = false;
-
-    const tick = async () => {
-      try {
-        const h = await get<InvestmentHistoryItem[]>(ENDPOINTS.investmentHistory);
-        if (!cancelled) setHistory(h);
-      } catch (e: any) {
-        if (!cancelled) setError(e.message ?? "Failed to fetch history");
-      }
-    };
-
-    tick();
-    const id = window.setInterval(tick, 3000); // every 3s is enough
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [view]);
-
-  async function onLogin() {
-    setError(null);
-    setLoading(true);
-    try {
-      const body: LoginRequest = { userName: name };
-      await post<{ message: string }, LoginRequest>(ENDPOINTS.login, body);
+    if (isAuthenticated) {
       setView("investment");
-    } catch (e: any) {
-      setError(e.message ?? "Login failed");
-    } finally {
-      setLoading(false);
+    } else if (!isAuthenticated && view === "investment") {
+      setView("login");
     }
-  }
+  }, [isAuthenticated]);
 
-  async function onInvest(optionId: string) {
-    setError(null);
-    setLoading(true);
+  // Handle login
+  async function handleLogin() {
     try {
-      await post(ENDPOINTS.invest, { optionId });
-      // Refresh state to get the new investment
-      const s = await get<AccountState>(ENDPOINTS.state);
-
-      // Refresh history to get the new investment
-      const h = await get<InvestmentHistoryItem[]>(ENDPOINTS.investmentHistory);
-      setHistory(h);
-      setState(s);
-    } catch (e: any) {
-      setError(e.message ?? "Invest failed");
-    } finally {
-      setLoading(false);
+      await login();
+    } catch {
+      // Error is handled by useAuth hook and aggregated below
     }
   }
+
+  // Handle logout
+  function handleLogout() {
+    logout();
+    setView("login");
+  }
+
+  // Aggregate all errors - show the first error that occurs
+  const error = useMemo(() => {
+    return authError || stateError || historyError || optionsError || investError || null;
+  }, [authError, stateError, historyError, optionsError, investError]);
 
   return (
-    <div style={{ fontFamily: "system-ui, Arial", padding: 16, maxWidth: 980, margin: "0 auto" }}>
-      <h2>Investments Simulator</h2>
+    <div className="container">
+      {view === "investment" && (
+        <Header
+          userName={state?.userName || null}
+          onLogout={handleLogout}
+        />
+      )}
 
       <ErrorBanner error={error} />
 
       {view === "login" ? (
-        <Login name={name} setName={setName} loading={loading} onLogin={onLogin} />
+        <Login name={name} setName={setName} loading={authLoading} onLogin={handleLogin} />
       ) : (
-        <Investment state={state} options={options} history={history} loading={loading} onInvest={onInvest} />
+        <Investment state={state} options={options || []} history={history || []} loading={investLoading} onInvest={invest} />
       )}
     </div>
   );

@@ -1,45 +1,188 @@
 /* Layout styles for the application */
 
 .container {
-    max-width: 1020px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 22px 16px 40px;
+    padding: 24px 20px;
 }
 
-.header {
+/* Header */
+.app-header {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.app-header-content {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
+    gap: 16px;
+}
+
+.app-header-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.app-header-actions {
+    display: flex;
+    align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
 }
 
-.title {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: 0.2px;
-}
-
-.subtitle {
-    color: var(--muted);
-    font-size: 13px;
-}
-
+/* Grid Layouts */
 .gridTop {
     display: flex;
-    gap: 14px;
+    gap: 16px;
     flex-wrap: wrap;
+    margin-bottom: 16px;
 }
 
 .gridTwo {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-top: 14px;
+    gap: 16px;
+    margin-top: 16px;
 }
 
-@media (max-width: 920px) {
+/* Profile dropdown styles */
+.profile-dropdown {
+    position: relative;
+}
+
+.profile-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: 2px solid var(--border);
+    color: #0b1020;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    font-family: inherit;
+    padding: 0;
+}
+
+.profile-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-hover);
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    min-width: 180px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.profile-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.profile-dropdown-user {
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    cursor: default;
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+}
+
+.profile-dropdown-button {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+.profile-dropdown-button:hover {
+    background: var(--panel);
+    color: var(--danger-hover);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        padding: 20px 16px;
+    }
+    
+    .app-header {
+        padding: 14px 20px;
+    }
+    
+    .app-header-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+    
+    .app-header {
+        padding: 12px 16px;
+        margin-bottom: 20px;
+    }
+    
+    .app-header-title {
+        font-size: 16px;
+    }
+    
+    .app-header-content {
+        gap: 12px;
+    }
+    
+    .gridTop {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
     .gridTwo {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .profile-dropdown-menu {
+        right: 0;
+        left: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-header-content {
+        flex-wrap: wrap;
+    }
+    
+    .app-header-actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 }
