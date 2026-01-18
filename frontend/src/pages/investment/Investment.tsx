@@ -51,7 +51,7 @@ export function Investment(props: {
           <div className="kpiRow">
             <div className="kpi">${state?.balance?.toFixed(2) ?? '—'}</div>
           </div>
-          <div className="kpiSub">Updates on investment completion</div>
+          <div className="kpiSub">Last updated on {new Date(history[0]?.completedAtUtc ?? new Date().toISOString()).toLocaleString()}</div>
         </Card>
       </div>
 
