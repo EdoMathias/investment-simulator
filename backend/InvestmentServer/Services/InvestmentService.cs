@@ -17,7 +17,7 @@ public sealed class InvestmentService
 
     public async Task<InvestResult> TryInvest(string optionId)
     {
-        var investmentResult = await _store.TryStartInvestment(optionId);
+        var investmentResult = await _store.TryStartInvestmentAsync(optionId);
 
         if (investmentResult.IsSuccess is false)
         {

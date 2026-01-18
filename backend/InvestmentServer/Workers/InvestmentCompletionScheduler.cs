@@ -30,7 +30,7 @@ public sealed class InvestmentCompletionScheduler
                 if (delay > TimeSpan.Zero)
                     await Task.Delay(delay, ct);
 
-                await _store.CompleteInvestment(investment.Id, ct);
+                await _store.CompleteInvestmentAsync(investment.Id, ct);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)

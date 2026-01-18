@@ -17,28 +17,28 @@ public static class Endpoints
         app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
         // POST: Login
-        app.MapPost("/api/login", (IAccountStore accountStore, LoginRequest request) =>
+        app.MapPost("/api/login", async (IAccountStore accountStore, LoginRequest request) =>
         {
             if (Validations.IsValidUserName(request.UserName) is false)
             {
                 return ApiErrors.BadRequest("INVALID_USER_NAME", "User name must be 3-20 characters long and contain only English letters");
             }
 
-            accountStore.SetCurrentUser(request.UserName);
+            await accountStore.LoginAsync(request.UserName);
             return ApiResults.Ok(new { message = "Logged in successfully. Hello, " + request.UserName + "!" });
         });
 
         // POST: Logout
-        app.MapPost("/api/logout", (IAccountStore accountStore) =>
+        app.MapPost("/api/logout", async (IAccountStore accountStore) =>
         {
-            accountStore.ClearCurrentUser();
+            await accountStore.LogoutAsync();
             return ApiResults.Ok(new { message = "Logged out successfully." });
         });
 
         // GET: Account State
-        app.MapGet("/api/state", (IAccountStore accountStore) =>
+        app.MapGet("/api/state", async (IAccountStore accountStore) =>
         {
-            var state = accountStore.GetAccountState();
+            var state = await accountStore.GetAccountStateAsync();
 
             if (state is null)
             {
@@ -50,15 +50,15 @@ public static class Endpoints
         });
 
         // GET: Investment Options
-        app.MapGet("/api/investment-options", (IAccountStore accountStore) =>
+        app.MapGet("/api/investment-options", async (IAccountStore accountStore) =>
         {
-            return ApiResults.Ok(accountStore.GetInvestmentOptions());
+            return ApiResults.Ok(await accountStore.GetInvestmentOptionsAsync());
         });
 
         // GET: Account's investment history
-        app.MapGet("/api/investment-history", (IAccountStore accountStore) =>
+        app.MapGet("/api/investment-history", async (IAccountStore accountStore) =>
         {
-            return ApiResults.Ok(accountStore.GetInvestmentHistory());
+            return ApiResults.Ok(await accountStore.GetHistoryAsync());
         });
 
         // POST: Start an investment

@@ -8,27 +8,16 @@ namespace InvestmentServer.Storage;
 // and to start and complete investments
 public interface IAccountStore
 {
-    // Get the current account state
-    AccountState GetAccountState();
+    Task<AccountState> GetAccountStateAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<InvestmentHistoryItem>> GetHistoryAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<InvestmentOption>> GetInvestmentOptionsAsync(CancellationToken ct = default);
 
-    // Get the investment options
-    IReadOnlyList<InvestmentOption> GetInvestmentOptions();
-
-    // Get the investment history
-    IReadOnlyList<InvestmentHistoryItem> GetInvestmentHistory();
-
-    // Set current user
-    void SetCurrentUser(string userName);
-
-    // Clear current user
-    void ClearCurrentUser();
-
-    // Try to start a new investment
-    Task<InvestResult<ActiveInvestment>> TryStartInvestment(string optionId);
-
-    // Complete an investment
-    Task CompleteInvestment(string activeInvestmentId, CancellationToken ct = default);
-
-    // Get all active investments
     Task<IReadOnlyList<ActiveInvestment>> GetAllActiveInvestmentsAsync(CancellationToken ct = default);
+
+    Task LoginAsync(string userName, CancellationToken ct = default);
+    Task LogoutAsync(CancellationToken ct = default);
+
+    Task<InvestResult<ActiveInvestment>> TryStartInvestmentAsync(string optionId, CancellationToken ct = default);
+
+    Task<long?> CompleteInvestmentAsync(string activeInvestmentId, CancellationToken ct = default);
 }

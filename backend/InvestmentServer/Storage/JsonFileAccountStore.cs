@@ -38,32 +38,78 @@ public sealed class JsonFileAccountStore : IAccountStore
 
     // --------- IAccountStore ---------
 
-    public AccountState GetAccountState()
+    public async Task<AccountState> GetAccountStateAsync(CancellationToken ct = default)
     {
-        return GetAccountStateAsync(CancellationToken.None).GetAwaiter().GetResult();
+        if (_currentUserName is null)
+        {
+            // Not logged return empty state
+            return new AccountState("", 0m, Array.Empty<ActiveInvestment>(), Array.Empty<InvestmentHistoryItem>());
+        }
+
+        await _gate.WaitAsync(ct);
+        try
+        {
+            var db = await ReadDbUnsafeAsync(ct);
+            var user = GetOrCreateUserUnsafe(db, _currentUserName);
+
+            // Ensure persisted if newly created
+            await WriteDbUnsafeAsync(db, ct);
+
+            return new AccountState(
+                user.UserName,
+                user.Balance,
+                user.ActiveInvestments.ToList(),
+                user.InvestmentHistory.ToList()
+            );
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
-    public IReadOnlyList<InvestmentHistoryItem> GetInvestmentHistory()
+    public async Task<IReadOnlyList<InvestmentHistoryItem>> GetHistoryAsync(CancellationToken ct = default)
     {
-        return GetInvestmentHistoryAsync(CancellationToken.None).GetAwaiter().GetResult();
+        if (_currentUserName is null)
+            return new List<InvestmentHistoryItem>();
+
+        await _gate.WaitAsync(ct);
+        try
+        {
+            var db = await ReadDbUnsafeAsync(ct);
+            var user = GetOrCreateUserUnsafe(db, _currentUserName);
+
+            // Ensure persisted if newly created
+            await WriteDbUnsafeAsync(db, ct);
+
+            return user.InvestmentHistory
+                .OrderByDescending(i => i.CompletedAtUtc)
+                .ToList();
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
-    public IReadOnlyList<InvestmentOption> GetInvestmentOptions()
+    public Task<IReadOnlyList<InvestmentOption>> GetInvestmentOptionsAsync(CancellationToken ct = default)
     {
-        return _investmentOptions.ToList();
+        return Task.FromResult((IReadOnlyList<InvestmentOption>)_investmentOptions.ToList());
     }
 
-    public void SetCurrentUser(string userName)
+    public Task LoginAsync(string userName, CancellationToken ct = default)
     {
         _currentUserName = userName;
+        return Task.CompletedTask;
     }
 
-    public void ClearCurrentUser()
+    public Task LogoutAsync(CancellationToken ct = default)
     {
         _currentUserName = null;
+        return Task.CompletedTask;
     }
 
-    public async Task<InvestResult<ActiveInvestment>> TryStartInvestment(string optionId)
+    public async Task<InvestResult<ActiveInvestment>> TryStartInvestmentAsync(string optionId, CancellationToken ct = default)
     {
         _logger.LogInformation("TryStartInvestment called on thread {ThreadId}", Thread.CurrentThread.ManagedThreadId);
 
@@ -74,10 +120,10 @@ public sealed class JsonFileAccountStore : IAccountStore
         if (option is null)
             return InvestResult<ActiveInvestment>.Failure("INVALID_OPTION", "Invalid investment option");
 
-        await _gate.WaitAsync();
+        await _gate.WaitAsync(ct);
         try
         {
-            var db = await ReadDbUnsafeAsync();
+            var db = await ReadDbUnsafeAsync(ct);
 
             var user = GetOrCreateUserUnsafe(db, _currentUserName);
 
@@ -103,7 +149,7 @@ public sealed class JsonFileAccountStore : IAccountStore
 
             user.ActiveInvestments.Add(investment);
 
-            await WriteDbUnsafeAsync(db);
+            await WriteDbUnsafeAsync(db, ct);
 
             return InvestResult<ActiveInvestment>.Success(investment);
         }
@@ -111,11 +157,6 @@ public sealed class JsonFileAccountStore : IAccountStore
         {
             _gate.Release();
         }
-    }
-
-    public async Task CompleteInvestment(string activeInvestmentId, CancellationToken ct = default)
-    {
-        await CompleteInvestmentAsync(activeInvestmentId, ct);
     }
 
     public async Task<IReadOnlyList<ActiveInvestment>> GetAllActiveInvestmentsAsync(CancellationToken ct = default)
@@ -134,63 +175,7 @@ public sealed class JsonFileAccountStore : IAccountStore
         }
     }
 
-    // --------- async internals for sync members ---------
-
-    private async Task<AccountState> GetAccountStateAsync(CancellationToken ct)
-    {
-        if (_currentUserName is null)
-        {
-            // Return default state for not logged in user
-            return new AccountState(null, 1000m, new List<ActiveInvestment>(), new List<InvestmentHistoryItem>());
-        }
-
-        await _gate.WaitAsync(ct);
-        try
-        {
-            var db = await ReadDbUnsafeAsync(ct);
-            var user = GetOrCreateUserUnsafe(db, _currentUserName);
-
-            // Ensure persisted if newly created
-            await WriteDbUnsafeAsync(db, ct);
-
-            return new AccountState(
-                user.UserName,
-                user.Balance,
-                user.ActiveInvestments.ToList(),
-                user.InvestmentHistory.ToList()
-            );
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    private async Task<IReadOnlyList<InvestmentHistoryItem>> GetInvestmentHistoryAsync(CancellationToken ct)
-    {
-        if (_currentUserName is null)
-            return new List<InvestmentHistoryItem>();
-
-        await _gate.WaitAsync(ct);
-        try
-        {
-            var db = await ReadDbUnsafeAsync(ct);
-            var user = GetOrCreateUserUnsafe(db, _currentUserName);
-
-            // Ensure persisted if newly created
-            await WriteDbUnsafeAsync(db, ct);
-
-            return user.InvestmentHistory
-                .OrderByDescending(i => i.CompletedAtUtc)
-                .ToList();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    private async Task<long?> CompleteInvestmentAsync(string activeInvestmentId, CancellationToken ct = default)
+    public async Task<long?> CompleteInvestmentAsync(string activeInvestmentId, CancellationToken ct = default)
     {
         InvestmentCompletedEvent? eventToPublish = null;
 
