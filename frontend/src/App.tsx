@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import type { AccountState, ApiError, InvestmentHistoryItem } from "./api/types";
+import type { AccountState, ActiveInvestment, ApiError, InvestmentCompletedEvent, InvestmentHistoryItem } from "./api/types";
 import { ENDPOINTS } from "./api/endpoints";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { SuccessBanner } from "./components/SuccessBanner";
@@ -24,7 +24,7 @@ export default function App() {
   const isInvestmentView = view === "investment";
 
   // State management
-  const [state, setState] = useState<AccountState | null>(null);
+  const [accountState, setAccountState] = useState<AccountState | null>(null);
   const [stateError, setStateError] = useState<ApiError | null>(null);
   const [history, setHistory] = useState<InvestmentHistoryItem[]>([]);
   const [historyError, setHistoryError] = useState<ApiError | null>(null);
@@ -36,7 +36,7 @@ export default function App() {
   const fetchState = useCallback(async () => {
     try {
       const newState = await get<AccountState>(ENDPOINTS.state);
-      setState(newState);
+      setAccountState(newState);
       setStateError(null);
     } catch (e: any) {
       const apiError: ApiError = e.apiError || {
@@ -68,7 +68,7 @@ export default function App() {
       fetchState();
       fetchHistory();
     } else {
-      setState(null);
+      setAccountState(null);
       setStateError(null);
       setHistory([]);
       setHistoryError(null);
@@ -77,26 +77,37 @@ export default function App() {
 
   // Use SSE to detect investment completions and refresh state/history
   useInvestmentCompletedSSE(
-    useCallback(() => {
-      // Store previous history to detect new completions
-      const previousHistoryIds = new Set(history.map(h => h.id));
+    (evt: InvestmentCompletedEvent) => {
+      console.log("evt", evt);
+      setAccountState((prev: AccountState | null) => {
+        if (!prev) return prev;
 
-      // When an investment completes, refresh both state and history
-      fetchState();
-      fetchHistory().then(() => {
-        // After fetching, compare to find the newly completed investment
-        get<InvestmentHistoryItem[]>(ENDPOINTS.investmentHistory).then(newHistory => {
-          const completedInvestment = newHistory.find(h => !previousHistoryIds.has(h.id));
-          if (completedInvestment) {
-            console.log("completedInvestment", completedInvestment);
-            setSuccessMessage(
-              `Investment "${completedInvestment.name}" completed! Return: $${completedInvestment.returnedAmount.toFixed(2)}`
-            );
-          }
-        });
+        return {
+          ...prev,
+          balance: evt.BalanceAfter,
+          activeInvestments: prev.activeInvestments.filter((x: ActiveInvestment) => x.id !== evt.InvestmentId),
+        };
       });
-    }, [fetchState, fetchHistory, history]),
-    isInvestmentView && isAuthenticated
+
+      setHistory((prev: InvestmentHistoryItem[]) => {
+        if (prev.some((x: InvestmentHistoryItem) => x.id === evt.InvestmentId)) return prev;
+
+        return [
+          {
+            id: evt.InvestmentId,
+            optionId: evt.OptionId,
+            name: evt.Name,
+            investedAmount: evt.InvestedAmount,
+            returnedAmount: evt.ReturnedAmount,
+            completedAtUtc: evt.CompletedAtUtc,
+            startTimeUtc: evt.StartTimeUtc,
+            endTimeUtc: evt.EndTimeUtc,
+          },
+          ...prev,
+        ];
+      });
+    },
+    isAuthenticated
   );
 
   // Get investment options
@@ -114,7 +125,7 @@ export default function App() {
 
       await invest(optionId, (newState) => {
         // Update state immediately after investment
-        setState(newState);
+        setAccountState(newState);
       });
 
       // Show success message
@@ -165,7 +176,7 @@ export default function App() {
     <div className="container">
       {view === "investment" && (
         <Header
-          userName={state?.userName || null}
+          userName={accountState?.userName || null}
           onLogout={handleLogout}
         />
       )}
@@ -176,7 +187,7 @@ export default function App() {
       {view === "login" ? (
         <Login name={name} setName={setName} loading={authLoading} onLogin={handleLogin} />
       ) : (
-        <Investment state={state} options={options || []} history={history} loading={investLoading} onInvest={handleInvest} />
+        <Investment state={accountState} options={options || []} history={history} loading={investLoading} onInvest={handleInvest} />
       )}
     </div>
   );

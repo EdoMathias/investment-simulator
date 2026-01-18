@@ -192,24 +192,21 @@ public sealed class JsonFileAccountStore : IAccountStore
 
     private async Task<long?> CompleteInvestmentAsync(string activeInvestmentId, CancellationToken ct = default)
     {
+        InvestmentCompletedEvent? eventToPublish = null;
+
         await _gate.WaitAsync(ct);
         try
         {
             var db = await ReadDbUnsafeAsync(ct);
             var now = DateTime.UtcNow;
 
-            // Search across all users for the investment.
             foreach (var user in db.Users.Values)
             {
                 var index = user.ActiveInvestments.FindIndex(i => i.Id == activeInvestmentId);
-                if (index < 0)
-                    continue;
+                if (index < 0) continue;
 
                 var investment = user.ActiveInvestments[index];
-
-                // Not due yet
-                if (investment.EndTimeUtc > now)
-                    return null;
+                if (investment.EndTimeUtc > now) return null;
 
                 user.Balance += investment.ExpectedReturn;
 
@@ -228,16 +225,43 @@ public sealed class JsonFileAccountStore : IAccountStore
 
                 await WriteDbUnsafeAsync(db, ct);
 
-                var ev = _eventsHub.Publish(investment.Id, now);
-                return ev.Token;
+                _logger.LogInformation(
+                    "Investment completed. User={User} InvestmentId={InvestmentId} Returned={Returned} BalanceAfter={BalanceAfter}",
+                    user.UserName, investment.Id, investment.ExpectedReturn, user.Balance
+                );
+
+                eventToPublish = new InvestmentCompletedEvent(
+                    Token: 0,
+                    UserName: user.UserName,
+                    InvestmentId: investment.Id,
+                    OptionId: investment.OptionId,
+                    Name: investment.Name,
+                    InvestedAmount: investment.InvestedAmount,
+                    ReturnedAmount: investment.ExpectedReturn,
+                    BalanceAfter: user.Balance,
+                    StartTimeUtc: investment.StartTimeUtc,
+                    EndTimeUtc: investment.EndTimeUtc,
+                    CompletedAtUtc: now
+                );
+
+                break;
             }
-            // If no investment was found and completed, return null
-            return null;
         }
         finally
         {
             _gate.Release();
         }
+
+        if (eventToPublish is null) return null;
+
+        var published = _eventsHub.Publish(eventToPublish);
+
+        _logger.LogDebug(
+            "Published completion event. Token={Token} User={User} InvestmentId={InvestmentId}",
+            published.Token, published.UserName, published.InvestmentId
+        );
+
+        return published.Token;
     }
 
     // --------- DB model + helpers ---------

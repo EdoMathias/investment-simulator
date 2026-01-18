@@ -6,12 +6,12 @@ namespace InvestmentServer.Events;
 public sealed class CompletionEventsHub
 {
     private long _token;
-    private readonly ConcurrentDictionary<Guid, Channel<CompletionEvent>> _subs = new();
+    private readonly ConcurrentDictionary<Guid, Channel<InvestmentCompletedEvent>> _subs = new();
 
-    public (ChannelReader<CompletionEvent> Reader, Action Unsubscribe) Subscribe()
+    public (ChannelReader<InvestmentCompletedEvent> Reader, Action Unsubscribe) Subscribe()
     {
         var id = Guid.NewGuid();
-        var ch = Channel.CreateUnbounded<CompletionEvent>(new UnboundedChannelOptions
+        var ch = Channel.CreateUnbounded<InvestmentCompletedEvent>(new UnboundedChannelOptions
         {
             SingleReader = true,
             SingleWriter = false
@@ -28,13 +28,10 @@ public sealed class CompletionEventsHub
         return (ch.Reader, Unsubscribe);
     }
 
-    public CompletionEvent Publish(string investmentId, DateTime completedAtUtc)
+    public InvestmentCompletedEvent Publish(InvestmentCompletedEvent ev)
     {
-        var ev = new CompletionEvent(
-            Token: Interlocked.Increment(ref _token),
-            InvestmentId: investmentId,
-            CompletedAtUtc: completedAtUtc
-        );
+        // Assign a unique token
+        ev = ev with { Token = Interlocked.Increment(ref _token) };
 
         foreach (var ch in _subs.Values)
             ch.Writer.TryWrite(ev);

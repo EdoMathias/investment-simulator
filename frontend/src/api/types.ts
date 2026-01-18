@@ -43,3 +43,17 @@ export type AccountState = {
     balance: number;
     activeInvestments: ActiveInvestment[];
 };
+
+export type InvestmentCompletedEvent = {
+    Token: number;
+    UserName: string;
+    InvestmentId: string;
+    OptionId: string;
+    Name: string;
+    InvestedAmount: number;
+    ReturnedAmount: number;
+    BalanceAfter: number;
+    StartTimeUtc: string;
+    EndTimeUtc: string;
+    CompletedAtUtc: string;
+};

@@ -49,7 +49,7 @@ export function Investment(props: {
 
         <Card title="Balance">
           <div className="kpiRow">
-            <div className="kpi">${state ? state.balance.toFixed(2) : '—'}</div>
+            <div className="kpi">${state?.balance?.toFixed(2) ?? '—'}</div>
           </div>
           <div className="kpiSub">Updates on investment completion</div>
         </Card>
@@ -169,7 +169,7 @@ export function Investment(props: {
               <tbody>
                 {history.map((h) => (
                   <tr className="row" key={h.id}>
-                    <TableCell mono>{h.id.slice(0, 8)}…</TableCell>
+                    <TableCell mono>{h.id}</TableCell>
                     <TableCell>{h.name}</TableCell>
                     <TableCell>${h.investedAmount}</TableCell>
                     <TableCell>${h.returnedAmount}</TableCell>
