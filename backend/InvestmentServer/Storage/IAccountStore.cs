@@ -20,6 +20,9 @@ public interface IAccountStore
     // Set current user
     void SetCurrentUser(string userName);
 
+    // Clear current user
+    void ClearCurrentUser();
+
     // Try to start a new investment
     InvestResult<ActiveInvestment> TryStartInvestment(string optionId);
 

@@ -26,6 +26,13 @@ public static class Endpoints
             return ApiResults.Ok(new { message = "Logged in successfully. Hello, " + request.UserName + "!" });
         });
 
+        // POST: Logout
+        app.MapPost("/api/logout", (IAccountStore accountStore) =>
+        {
+            accountStore.ClearCurrentUser();
+            return ApiResults.Ok(new { message = "Logged out successfully." });
+        });
+
         // GET: Account State
         app.MapGet("/api/state", (IAccountStore accountStore) =>
         {

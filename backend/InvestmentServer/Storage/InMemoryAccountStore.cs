@@ -80,6 +80,20 @@ public class InMemoryAccountStore : IAccountStore
     }
 
     /// <summary>
+    /// Clear the current user - log out
+    /// </summary>
+    public void ClearCurrentUser()
+    {
+        lock (_lock)
+        {
+            _currentUserName = null;
+            _balance = 1000m;
+            _activeInvestments.Clear();
+            _investmentHistory.Clear();
+        }
+    }
+
+    /// <summary>
     /// Try to start a new investment
     /// </summary>
     /// <param name="optionId"></param>
