@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { get, post } from "../api/http";
+import { post } from "../api/http";
 import { ENDPOINTS } from "../api/endpoints";
-import type { AccountState, ApiError, InvestmentHistoryItem, InvestmentResponse } from "../api/types";
+import type { ApiError, InvestmentResponse } from "../api/types";
 
 /**
  * Hook to invest in an option
@@ -10,31 +10,19 @@ export function useInvest() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<ApiError | null>(null);
 
-    const invest = async (
-        optionId: string,
-        onSuccess?: (state: AccountState, history: InvestmentHistoryItem[]) => void
-    ) => {
+    const invest = async (optionId: string) => {
         setError(null);
         setLoading(true);
         try {
-            const response = await post<InvestmentResponse, { optionId: string }>(ENDPOINTS.invest, { optionId });
+            const response = await post<InvestmentResponse, { optionId: string }>(
+                ENDPOINTS.invest,
+                { optionId }
+            );
 
-            // Refresh state and history to get the new investment
-            const [state, history] = await Promise.all([
-                get<AccountState>(ENDPOINTS.state),
-                get<InvestmentHistoryItem[]>(ENDPOINTS.investmentHistory),
-            ]);
-
-            if (onSuccess) {
-                onSuccess(state, history);
-            }
-
-            return { state, history, response };
+            return { response };
         } catch (e: any) {
-            const apiError: ApiError = e.apiError || {
-                code: "INVEST_FAILED",
-                message: e.message ?? "Invest failed"
-            };
+            const apiError: ApiError =
+                e.apiError || { code: "INVEST_FAILED", message: e.message ?? "Invest failed" };
             setError(apiError);
             throw e;
         } finally {
