@@ -1,101 +1,81 @@
 # Investment Simulator
 
-A small full‑stack demo that simulates simple user investments. The project demonstrates a clear separation between a minimal .NET backend and a Vite + React frontend, with a proxy for local development.
+A full-stack demo simulating user investments, featuring a clean separation between a .NET backend and a Vite + React frontend. Designed for clarity, rapid onboarding, and easy extension.
 
 ---
 
-## Quick start
+## Table of Contents
 
-Prerequisites:
-- .NET 9 SDK (for backend)
-- Node.js 18+ and npm/yarn (for frontend)
+1. [Overview](#overview)
+2. [Project Structure](#project-structure)
+3. [Setup & Quick Start](#setup--quick-start)
+4. [Architecture](#architecture)
+5. [API Reference](#api-reference)
 
-Clone and run locally (Windows example shown):
+---
+
+## Overview
+
+This project demonstrates:
+- A minimal .NET 9 REST API for investment simulation (JSON file storage)
+- A modern Vite + React frontend (TypeScript)
+- Local development with proxying
+
+---
+
+## Project Structure
+
+- `backend/InvestmentServer` — Main API: business logic, JSON file storage, background worker
+- `frontend/` — Vite + React app (TypeScript)
+
+---
+
+## Setup & Quick Start
+
+**Prerequisites:**
+- .NET 9 SDK
+- Node.js 18+ and npm/yarn
+
+**Run locally (Windows):**
 
 ```powershell
-# backend (API)
+# Backend (API)
 cd backend\InvestmentServer
 dotnet run
 
-# in a second terminal — frontend (dev)
+# In a second terminal — Frontend (dev)
 cd frontend
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 (frontend). The frontend proxies API calls to the backend at http://localhost:5055.
+Open [http://localhost:5173](http://localhost:5173) (frontend). The frontend proxies API calls to the backend at [http://localhost:5055](http://localhost:5055).
 
 ---
 
-## What’s included
+## Architecture
 
-- `backend/InvestmentServer` — Main API (business logic, in-memory storage, background worker).
-- `backend/DemoServer` — Small demo/static server used for examples.
-- `frontend/` — Vite + React app (TypeScript).
-- `frontend/src/api` — Lightweight API client and endpoint constants.
+**Backend:**
+- .NET 9 REST API
+- Stores account state in a JSON file (`accounts.json`)
+- Dependency Injection for services
+- Background worker processes investments asynchronously
 
----
-
-## Architecture & behavior
-
-- API is a tiny REST service (no DB) that stores account state in memory and runs a background worker to complete timed investments.
-- Frontend communicates with the API via `/api/*` and uses a Vite dev proxy (see `vite.config.ts`).
-- Key backend endpoints (see `backend/InvestmentServer/Program.cs`):
-  - `GET /api/health` — health check
-  - `POST /api/login` — set current user
-  - `GET /api/state` — get account state
-  - `GET /api/investment-options` — available options
-  - `POST /api/invest` — start an investment
+**Frontend:**
+- React + Vite (TypeScript)
+- Communicates with backend via `/api/*` endpoints
 
 ---
 
-## Local development details
+## API Reference
 
-Backend (InvestmentServer):
-```powershell
-cd backend\InvestmentServer
-# development (defaults to http://localhost:5055)
-dotnet run
-```
+Key backend endpoints ([see source](backend/InvestmentServer/Program.cs)):
 
-Frontend (dev server):
-```bash
-cd frontend
-npm install
-npm run dev   # opens on http://localhost:5173 by default
-```
-
-Notes:
-> The frontend proxies `/api` to `http://localhost:5055` — no CORS configuration required for the dev setup.
-
----
-
-## Build & production (minimal)
-
-Build frontend:
-```bash
-cd frontend
-npm run build
-# preview the production build
-npm run preview
-```
-
-Publish backend (example):
-```powershell
-cd backend\InvestmentServer
-dotnet publish -c Release -o ./publish
-```
-
----
-
-## Where to look in the code
-
-- Backend
-  - `InvestmentServer/Program.cs` — routes and DI
-  - `InvestmentServer/Services/InvestmentService.cs` — core investment logic
-  - `InvestmentServer/Storage/InMemoryAccountStore.cs` — in-memory state
-  - `InvestmentServer/Workers/InvestmentProcessor.cs` — background worker
-- Frontend
-  - `frontend/src/pages` — UI pages (login, investment)
-  - `frontend/src/api` — `endpoints.ts`, `http.ts` (API client)
-
+- `GET /api/health` — Health check
+- `POST /api/login` — Set current user
+- `POST /api/logout` — Clear current user
+- `GET /api/state` — Get account state
+- `GET /api/investment-options` — List available investment options
+- `GET /api/investment-history` — Get past investments
+- `POST /api/invest` — Start an investment
+- `/events/completions/stream` — Server-Sent Events stream for investment completions
