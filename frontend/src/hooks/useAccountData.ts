@@ -110,9 +110,6 @@ export function useAccountData(enabled: boolean) {
             refreshState,
             refreshHistory,
             refreshAll,
-            // expose setters only if you still want them for future optimistic updates
-            setAccountState,
-            setHistory,
         }),
         [
             accountState,
