@@ -38,7 +38,7 @@ export default function App() {
   } = useAccountData(isInvestmentView && isAuthenticated);
 
   // Investment options hook
-  const { options, error: optionsError } = useInvestmentOptions(isInvestmentView);
+  const { options, error: optionsError } = useInvestmentOptions(isInvestmentView && isAuthenticated);
 
   // Invest hook
   const { invest, loading: investLoading, error: investError } = useInvest();

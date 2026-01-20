@@ -68,8 +68,8 @@ export function useAuth() {
         setError(null);
         setLoading(true);
         try {
-            await post(ENDPOINTS.logout, {});
             setIsAuthenticated(false);
+            await post(ENDPOINTS.logout, {});
             setName("");
         } catch (e: any) {
             const apiError: ApiError = e.apiError || {
