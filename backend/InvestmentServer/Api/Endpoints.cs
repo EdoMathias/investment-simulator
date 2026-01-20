@@ -8,6 +8,9 @@ using System.Text.Json;
 
 namespace InvestmentServer.Api;
 
+/// <summary>
+/// Extension methods for mapping API endpoints
+/// </summary>
 public static class Endpoints
 {
     public static WebApplication MapEndpoints(this WebApplication app)

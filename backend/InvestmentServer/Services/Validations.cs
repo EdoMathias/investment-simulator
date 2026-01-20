@@ -2,7 +2,9 @@ using System.Text.RegularExpressions;
 
 namespace InvestmentServer.Utils;
 
-// Helper methods for validations
+/// <summary>
+/// Validation utilities for the Investment Server
+/// </summary>
 public static class Validations
 {
 

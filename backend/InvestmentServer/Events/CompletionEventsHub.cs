@@ -3,6 +3,9 @@ using System.Threading.Channels;
 
 namespace InvestmentServer.Events;
 
+/// <summary>
+/// Hub for managing investment completion events
+/// </summary>
 public sealed class CompletionEventsHub
 {
     private long _token;
