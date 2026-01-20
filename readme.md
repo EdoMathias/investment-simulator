@@ -69,7 +69,7 @@ Open [http://localhost:5173](http://localhost:5173) (frontend). The frontend pro
 
 ## API Reference
 
-Key backend endpoints ([see source](backend/InvestmentServer/Program.cs)):
+Key backend endpoints ([see source](backend/InvestmentServer/Api/Endpoints.cs)):
 
 - `GET /api/health` — Health check
 - `POST /api/login` — Set current user
