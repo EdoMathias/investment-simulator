@@ -51,21 +51,21 @@
         margin: -16px;
         padding: 16px;
     }
-    
+
     .table {
         font-size: 13px;
     }
-    
+
     .tableHeader {
         padding: 10px 12px;
         font-size: 10px;
     }
-    
+
     .tableCell {
         padding: 12px;
         white-space: nowrap;
     }
-    
+
     .kpi {
         font-size: 24px;
     }
@@ -76,22 +76,56 @@
         margin: -12px;
         padding: 12px;
     }
-    
+
     .table {
         font-size: 12px;
     }
-    
+
     .tableHeader {
         padding: 8px 10px;
         font-size: 9px;
     }
-    
+
     .tableCell {
         padding: 10px;
     }
-    
+
     .btn {
         padding: 8px 12px;
         font-size: 12px;
+    }
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.paginationInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.paginationCount {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .pagination {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .paginationInfo {
+        order: -1;
     }
 }

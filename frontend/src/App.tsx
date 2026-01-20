@@ -76,7 +76,9 @@ export default function App() {
   async function handleLogin() {
     try {
       const response = await login();
-      setSuccessMessage(response.message);
+      if (response) {
+        setSuccessMessage(response.message);
+      }
     } catch {
       // Error is handled by useAuth hook and aggregated below
     }
