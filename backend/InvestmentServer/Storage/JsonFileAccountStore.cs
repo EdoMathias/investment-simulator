@@ -6,6 +6,10 @@ using InvestmentServer.Events;
 
 namespace InvestmentServer.Storage;
 
+/// <summary>
+/// JSON file-based implementation of IAccountStore
+/// For simplicity, this implementation uses a single JSON file to store all user accounts.
+/// </summary>
 public sealed class JsonFileAccountStore : IAccountStore
 {
     private readonly ILogger<JsonFileAccountStore> _logger;
@@ -42,7 +46,7 @@ public sealed class JsonFileAccountStore : IAccountStore
     {
         if (_currentUserName is null)
         {
-            // Not logged return empty state
+            // Not logged in, return empty state
             return new AccountState("", 0m, Array.Empty<ActiveInvestment>(), Array.Empty<InvestmentHistoryItem>());
         }
 
@@ -54,6 +58,8 @@ public sealed class JsonFileAccountStore : IAccountStore
 
             // Ensure persisted if newly created
             await WriteDbUnsafeAsync(db, ct);
+
+            _logger.LogDebug("Retrieved account state for user {User}", _currentUserName);
 
             return new AccountState(
                 user.UserName,
@@ -71,7 +77,9 @@ public sealed class JsonFileAccountStore : IAccountStore
     public async Task<IReadOnlyList<InvestmentHistoryItem>> GetHistoryAsync(CancellationToken ct = default)
     {
         if (_currentUserName is null)
+        {
             return new List<InvestmentHistoryItem>();
+        }
 
         await _gate.WaitAsync(ct);
         try
@@ -81,6 +89,8 @@ public sealed class JsonFileAccountStore : IAccountStore
 
             // Ensure persisted if newly created
             await WriteDbUnsafeAsync(db, ct);
+
+            _logger.LogDebug("Retrieved investment history for user {User}", _currentUserName);
 
             return user.InvestmentHistory
                 .OrderByDescending(i => i.CompletedAtUtc)
@@ -94,24 +104,28 @@ public sealed class JsonFileAccountStore : IAccountStore
 
     public Task<IReadOnlyList<InvestmentOption>> GetInvestmentOptionsAsync(CancellationToken ct = default)
     {
+        _logger.LogDebug("Retrieved investment options");
         return Task.FromResult((IReadOnlyList<InvestmentOption>)_investmentOptions.ToList());
     }
 
     public Task LoginAsync(string userName, CancellationToken ct = default)
     {
         _currentUserName = userName;
+        _logger.LogInformation("User {User} logged in", userName);
         return Task.CompletedTask;
     }
 
     public Task LogoutAsync(CancellationToken ct = default)
     {
+
+        _logger.LogInformation("User {User} logged out", _currentUserName);
         _currentUserName = null;
         return Task.CompletedTask;
     }
 
     public async Task<InvestResult<ActiveInvestment>> TryStartInvestmentAsync(string optionId, CancellationToken ct = default)
     {
-        _logger.LogInformation("TryStartInvestment called on thread {ThreadId}", Thread.CurrentThread.ManagedThreadId);
+        _logger.LogDebug("User {User} is attempting to start investment with option {OptionId}", _currentUserName, optionId);
 
         if (_currentUserName is null)
             return InvestResult<ActiveInvestment>.Failure("NOT_LOGGED_IN", "User is not logged in");
@@ -150,6 +164,8 @@ public sealed class JsonFileAccountStore : IAccountStore
             user.ActiveInvestments.Add(investment);
 
             await WriteDbUnsafeAsync(db, ct);
+
+            _logger.LogDebug("User {User} started investment with option {OptionId}, amount {Amount}. New balance: {Balance}", _currentUserName, optionId, option.RequiredAmount, user.Balance);
 
             return InvestResult<ActiveInvestment>.Success(investment);
         }
@@ -249,21 +265,12 @@ public sealed class JsonFileAccountStore : IAccountStore
         return published.Token;
     }
 
-    // --------- DB model + helpers ---------
+    // --------- File IO and Helpers (caller must hold _gate) ---------
 
-    private sealed class AccountsDb
-    {
-        public Dictionary<string, UserAccount> Users { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private sealed class UserAccount
-    {
-        public string UserName { get; set; } = "";
-        public decimal Balance { get; set; } = 1000m;
-        public List<ActiveInvestment> ActiveInvestments { get; set; } = new();
-        public List<InvestmentHistoryItem> InvestmentHistory { get; set; } = new();
-    }
-
+    /// <summary>
+    /// Get existing user or create a new one (unsafe, caller must hold _gate)
+    /// </summary>
+    /// <returns>UserAccount</returns>
     private static UserAccount GetOrCreateUserUnsafe(AccountsDb db, string userName)
     {
         if (!db.Users.TryGetValue(userName, out var user))
@@ -282,8 +289,9 @@ public sealed class JsonFileAccountStore : IAccountStore
         return user;
     }
 
-    // --------- File IO (caller must hold _gate) ---------
-
+    /// <summary>
+    /// Read the accounts DB from the JSON file (unsafe, caller must hold _gate)
+    /// </summary>
     private async Task<AccountsDb> ReadDbUnsafeAsync(CancellationToken ct = default)
     {
         if (!File.Exists(_path))
@@ -297,6 +305,9 @@ public sealed class JsonFileAccountStore : IAccountStore
                ?? new AccountsDb();
     }
 
+    /// <summary>
+    /// Write the accounts DB to the JSON file (unsafe, caller must hold _gate)
+    /// </summary>
     private async Task WriteDbUnsafeAsync(AccountsDb db, CancellationToken ct = default)
     {
         var dir = Path.GetDirectoryName(_path);
@@ -315,5 +326,26 @@ public sealed class JsonFileAccountStore : IAccountStore
 
         File.Copy(tmp, _path, overwrite: true);
         File.Delete(tmp);
+    }
+
+    // --------- DB records ---------
+
+    /// <summary>
+    /// Accounts database model
+    /// </summary>
+    private sealed class AccountsDb
+    {
+        public Dictionary<string, UserAccount> Users { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// User account model
+    /// </summary>
+    private sealed class UserAccount
+    {
+        public string UserName { get; set; } = "";
+        public decimal Balance { get; set; } = 1000m;
+        public List<ActiveInvestment> ActiveInvestments { get; set; } = new();
+        public List<InvestmentHistoryItem> InvestmentHistory { get; set; } = new();
     }
 }
