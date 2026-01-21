@@ -1,6 +1,6 @@
 # Investment Simulator
 
-A full-stack demo simulating user investments, featuring a clean separation between a .NET backend and a Vite + React frontend. Designed for clarity, rapid onboarding, and easy extension.
+A full-stack demo simulating user investments, featuring a clean separation between a .NET backend and a Vite + React frontend.
 
 ---
 
