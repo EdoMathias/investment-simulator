@@ -4,6 +4,11 @@ using Microsoft.Extensions.Logging;
 
 namespace InvestmentServer.Workers;
 
+/// <summary>
+/// Rescheduler for active investments
+/// Runs on a background thread and reschedules investments when they are due
+/// in case of a restart of the server
+/// </summary>
 public sealed class InvestmentRescheduler : BackgroundService
 {
     private readonly IAccountStore _store;

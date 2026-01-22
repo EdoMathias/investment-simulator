@@ -5,6 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace InvestmentServer.Workers;
 
+/// <summary>
+/// Scheduler for completing investments
+/// Runs on a background thread and completes investments when they are due
+/// </summary>
 public sealed class InvestmentCompletionScheduler
 {
     private readonly IAccountStore _store;
